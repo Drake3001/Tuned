@@ -14,8 +14,8 @@ enum PlayContext {
 }
 
 enum SoloDifficulty {
-  EASY // preset generated colors; guesses still ColorAttempt.guessRgb
-  HARD // client hue + brightness; server converts to RGB for storage
+  EASY // preset generated colors; guess is one of the presets (HSB)
+  HARD // user controls hue, saturation, and brightness
 }
 
 enum MultiplayerGameMode {
@@ -82,14 +82,18 @@ model GameSession {
 }
 
 model ColorAttempt {
-  id        String      @id @default(uuid())
-  sessionId String
-  session   GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  index     Int // Numer koloru w sesji (1-5)
-  targetRgb Int[] // Tablica 1D dla [R, G, B] (PostgreSQL int[])
-  guessRgb  Int[] // Tablica 1D dla [R, G, B] (PostgreSQL int[])
-  deltaE    Decimal     @db.Decimal(5, 2) // Przechowywanie precyzyjnego wyniku CIEDE2000
-  createdAt DateTime    @default(now())
+  id                 String      @id @default(uuid())
+  sessionId          String
+  session            GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  index              Int // Numer koloru w sesji (1-5)
+  targetHue          Float
+  targetSaturation   Float
+  targetBrightness   Float
+  guessHue           Float
+  guessSaturation    Float
+  guessBrightness    Float
+  deltaE             Decimal     @db.Decimal(5, 2) // CIEDE2000 (computed from HSB → color space as needed)
+  createdAt          DateTime    @default(now())
 }
 
 // ROUND_BASED lobbies require LobbyRoundSettings; BATTLE_ROYALE require LobbyBrSettings (exactly one).
@@ -144,7 +148,7 @@ model Round {
   lobbyId      String
   lobby        Lobby      @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
   index        Int // Numer rundy w lobby
-  targetColors Json // [[R,G,B], ...]
+  targetColors Json // [{ hue, saturation, brightness }, ...]
   phase        RoundPhase @default(MEMORIZE)
 
   roundScores RoundScore[]
@@ -165,7 +169,7 @@ model RoundScore {
 
 model DailyChallenge {
   day            DateTime       @id @db.Date
-  targetColors   Json
+  targetColors   Json // [{ hue, saturation, brightness }, ...]
   soloDifficulty SoloDifficulty @default(HARD)
   seed           BigInt
   createdAt      DateTime       @default(now())
