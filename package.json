@@ -5,8 +5,16 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "prisma generate --config packages/db/prisma.config.ts",
+    "db:generate": "prisma generate --config packages/db/prisma.config.ts",
+    "db:migrate": "prisma migrate deploy --config packages/db/prisma.config.ts",
+    "db:migrate:dev": "prisma migrate dev --config packages/db/prisma.config.ts",
+    "db:studio": "prisma studio --config packages/db/prisma.config.ts",
+    "infra:up": "docker compose up -d postgres keycloak",
+    "infra:ps": "docker compose ps",
     "format": "prettier --write .",
-    "lint": "npm run lint --workspaces"
+    "lint": "npm run lint --workspaces",
+    "keycloak:export": "bash scripts/export-keycloak-realm.sh"
   },
   "keywords": [],
   "author": "",
@@ -16,6 +24,7 @@
     "packages/*"
   ],
   "devDependencies": {
+    "dotenv": "^17.2.2",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.8.3",
     "prisma": "^7.8.0"
