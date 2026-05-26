@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { VerticalHueSlider } from "./VerticalHueSlider";
-import { VerticalSaturationSlider } from "./VerticalSaturationSlider";
-import { VerticalBrightnessSlider } from "./VerticalBrightnessSlider";
-import { hsbToRgb, rgbToHsb } from "@/lib/game/color/conversions";
+import { VSlider } from "./VSlider";
+import { hsbToRgb, rgbToHex, rgbToHsb } from "@/lib/game/color/conversions";
 import type { RGB } from "@/lib/game/color";
+
+const HUE_GRADIENT =
+  "linear-gradient(to top, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%)";
 
 type Props = {
   value: RGB;
@@ -23,20 +24,42 @@ export function CardSidePicker({ value, onChange }: Props) {
     onChange(hsbToRgb(next));
   };
 
+  const satTop = rgbToHex(hsbToRgb([hsb[0], 1, hsb[2]]));
+  const satBot = rgbToHex(hsbToRgb([hsb[0], 0, hsb[2]]));
+  const briTop = rgbToHex(hsbToRgb([hsb[0], hsb[1], 1]));
+  const briBot = rgbToHex(hsbToRgb([hsb[0], hsb[1], 0]));
+
   return (
-    <div className="absolute inset-y-0 left-0 flex">
-      <VerticalHueSlider value={hsb[0]} onChange={(h) => update([h, hsb[1], hsb[2]])} />
-      <VerticalSaturationSlider
-        value={hsb[1]}
-        hue={hsb[0]}
-        brightness={hsb[2]}
-        onChange={(s) => update([hsb[0], s, hsb[2]])}
+    <div
+      className="absolute inset-y-6 left-6 flex items-stretch gap-3 rounded-2xl bg-black/30 p-4 backdrop-blur-md"
+      style={{ width: 232 }}
+    >
+      <VSlider
+        value={hsb[0]}
+        min={0}
+        max={360}
+        onChange={(h) => update([h, hsb[1], hsb[2]])}
+        trackGradient={HUE_GRADIENT}
+        label="hue"
+        formatValue={(v) => `${Math.round(v)}°`}
       />
-      <VerticalBrightnessSlider
+      <VSlider
+        value={hsb[1]}
+        min={0}
+        max={1}
+        onChange={(s) => update([hsb[0], s, hsb[2]])}
+        trackGradient={`linear-gradient(to bottom, ${satTop}, ${satBot})`}
+        label="sat"
+        formatValue={(v) => `${Math.round(v * 100)}%`}
+      />
+      <VSlider
         value={hsb[2]}
-        hue={hsb[0]}
-        saturation={hsb[1]}
+        min={0}
+        max={1}
         onChange={(b) => update([hsb[0], hsb[1], b])}
+        trackGradient={`linear-gradient(to bottom, ${briTop}, ${briBot})`}
+        label="bri"
+        formatValue={(v) => `${Math.round(v * 100)}%`}
       />
     </div>
   );
