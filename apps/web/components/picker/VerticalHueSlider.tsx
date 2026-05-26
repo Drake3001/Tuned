@@ -16,6 +16,8 @@ export function VerticalHueSlider({ value, onChange }: Props) {
       onChange={(e) => onChange(Number(e.target.value))}
       className="tuned-vslider tuned-vslider-hue"
       aria-label="hue"
+      // @ts-expect-error firefox-only attribute, not in React types
+      orient="vertical"
     />
   );
 }

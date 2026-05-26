@@ -25,6 +25,8 @@ export function VerticalSaturationSlider({ value, hue, brightness, onChange }: P
         ["--tuned-vslider-track" as string]: `linear-gradient(to bottom, ${top}, ${bot})`,
       }}
       aria-label="saturation"
+      // @ts-expect-error firefox-only attribute
+      orient="vertical"
     />
   );
 }

@@ -25,6 +25,8 @@ export function VerticalBrightnessSlider({ value, hue, saturation, onChange }: P
         ["--tuned-vslider-track" as string]: `linear-gradient(to bottom, ${top}, ${bot})`,
       }}
       aria-label="brightness"
+      // @ts-expect-error firefox-only attribute
+      orient="vertical"
     />
   );
 }

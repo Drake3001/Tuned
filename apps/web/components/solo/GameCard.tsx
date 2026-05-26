@@ -18,23 +18,29 @@ export function GameCard({ background, children }: Props) {
   );
 }
 
-export function CardTopLeft({ children }: { children: React.ReactNode }) {
+export function CardTopLeft({
+  children,
+  color = "rgba(255,255,255,0.7)",
+}: {
+  children: React.ReactNode;
+  color?: string;
+}) {
   return (
-    <div
-      className="absolute left-6 top-6 text-sm font-medium"
-      style={{ color: "rgba(255,255,255,0.7)" }}
-    >
+    <div className="absolute left-6 top-6 text-sm font-medium" style={{ color }}>
       {children}
     </div>
   );
 }
 
-export function CardTopRight({ children }: { children: React.ReactNode }) {
+export function CardTopRight({
+  children,
+  color = "rgba(255,255,255,0.55)",
+}: {
+  children: React.ReactNode;
+  color?: string;
+}) {
   return (
-    <div
-      className="absolute right-6 top-6 font-mono text-sm"
-      style={{ color: "rgba(255,255,255,0.4)" }}
-    >
+    <div className="absolute right-6 top-6 font-mono text-sm" style={{ color }}>
       {children}
     </div>
   );
