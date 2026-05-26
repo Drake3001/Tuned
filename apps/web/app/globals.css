@@ -191,18 +191,36 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
-/* Vertical slider variant — dialed.gg style */
+/* Vertical slider — modern Chromium uses writing-mode + rtl to flip the
+   range vertical without deprecated `appearance: slider-vertical`.
+   Firefox respects the `orient="vertical"` attribute on the element. */
 .tuned-vslider {
-  -webkit-appearance: slider-vertical;
-  appearance: slider-vertical;
+  -webkit-appearance: none;
+  appearance: none;
   writing-mode: vertical-lr;
+  -webkit-writing-mode: vertical-lr;
   direction: rtl;
   width: 36px;
   height: 100%;
+  margin: 0;
+  padding: 0;
   background: var(--tuned-vslider-track, #444);
   outline: none;
   cursor: pointer;
   border-radius: 0;
+  border: none;
+}
+.tuned-vslider::-webkit-slider-runnable-track {
+  width: 36px;
+  height: 100%;
+  background: transparent;
+  border: none;
+}
+.tuned-vslider::-moz-range-track {
+  width: 36px;
+  height: 100%;
+  background: transparent;
+  border: none;
 }
 .tuned-vslider-hue {
   background: linear-gradient(

@@ -5,6 +5,7 @@ import type { RGB } from "@/lib/game/color";
 import { CardSidePicker } from "@/components/picker/CardSidePicker";
 import { PaletteChoice } from "./PaletteChoice";
 import { GameCard, CardTopLeft, CardTopRight, CardActionButton } from "./GameCard";
+import { legibleLabel } from "@/lib/game/color/contrast";
 
 type Props = {
   target: RGB;
@@ -48,12 +49,14 @@ export function RecallPhase({ target, difficulty, index, total, onSubmit }: Prop
   }
 
   const bg = `rgb(${guess[0]}, ${guess[1]}, ${guess[2]})`;
+  const labelColor = legibleLabel(guess, 0.75);
+  const mutedColor = legibleLabel(guess, 0.5);
   return (
     <GameCard background={bg}>
-      <CardTopLeft>
+      <CardTopLeft color={labelColor}>
         {index + 1} / {total}
       </CardTopLeft>
-      <CardTopRight>tuned.gg</CardTopRight>
+      <CardTopRight color={mutedColor}>tuned.gg</CardTopRight>
       <CardSidePicker value={guess} onChange={setGuess} />
       <CardActionButton
         onClick={() => onSubmit(guess)}

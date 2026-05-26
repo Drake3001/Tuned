@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { RGB } from "@/lib/game/color";
 import { GameCard, CardTopLeft, CardTopRight } from "./GameCard";
+import { legibleLabel } from "@/lib/game/color/contrast";
 
 type Props = {
   target: RGB;
@@ -30,13 +31,15 @@ export function MemorizePhase({ target, durationSec, index, total, onComplete }:
   }, [durationSec, onComplete]);
 
   const bg = `rgb(${target[0]}, ${target[1]}, ${target[2]})`;
+  const labelColor = legibleLabel(target, 0.75);
+  const mutedColor = legibleLabel(target, 0.55);
 
   return (
     <GameCard background={bg}>
-      <CardTopLeft>
+      <CardTopLeft color={labelColor}>
         {index + 1} / {total}
       </CardTopLeft>
-      <CardTopRight>{remaining.toFixed(1)}s</CardTopRight>
+      <CardTopRight color={mutedColor}>{remaining.toFixed(1)}s</CardTopRight>
     </GameCard>
   );
 }

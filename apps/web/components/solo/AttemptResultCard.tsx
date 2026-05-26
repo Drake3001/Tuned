@@ -2,6 +2,7 @@
 
 import type { RGB } from "@/lib/game/color";
 import { rgbToHsb } from "@/lib/game/color/conversions";
+import { legibleLabel, legibleStrong } from "@/lib/game/color/contrast";
 import { CardActionButton } from "./GameCard";
 
 type Props = {
@@ -47,6 +48,11 @@ export function AttemptResultCard({
 }: Props) {
   const guessBg = `rgb(${guess[0]}, ${guess[1]}, ${guess[2]})`;
   const targetBg = `rgb(${target[0]}, ${target[1]}, ${target[2]})`;
+  const guessStrong = legibleStrong(guess);
+  const guessMuted = legibleLabel(guess, 0.6);
+  const guessLabel = legibleLabel(guess, 0.5);
+  const targetStrong = legibleStrong(target);
+  const targetMuted = legibleLabel(target, 0.55);
 
   return (
     <div className="flex min-h-[calc(100vh-200px)] items-center justify-center p-6">
@@ -54,47 +60,48 @@ export function AttemptResultCard({
         <div className="grid h-full grid-rows-2">
           <section
             className="relative flex flex-col justify-between p-8"
-            style={{ background: guessBg, color: "rgba(255,255,255,0.95)" }}
+            style={{ background: guessBg, color: guessStrong }}
           >
             <div className="flex items-start justify-between">
-              <span style={{ color: "rgba(255,255,255,0.7)" }} className="text-sm">
+              <span style={{ color: guessMuted }} className="text-sm">
                 {index + 1} / {total}
               </span>
               <div className="text-right">
-                <div className="font-mono text-6xl font-bold leading-none tabular-nums">
+                <div
+                  className="font-mono text-6xl font-bold leading-none tabular-nums"
+                  style={{ color: guessStrong }}
+                >
                   {deltaE.toFixed(2)}
                 </div>
                 <p
                   className="mt-2 max-w-[14ch] text-right text-base"
-                  style={{ color: "rgba(255,255,255,0.85)" }}
+                  style={{ color: guessMuted }}
                 >
                   {describe(deltaE)}
                 </p>
               </div>
             </div>
             <div>
-              <div
-                className="text-xs uppercase tracking-wider"
-                style={{ color: "rgba(255,255,255,0.6)" }}
-              >
+              <div className="text-xs uppercase tracking-wider" style={{ color: guessLabel }}>
                 your selection
               </div>
-              <div className="font-mono text-sm">{formatHsb(guess)}</div>
+              <div className="font-mono text-sm" style={{ color: guessStrong }}>
+                {formatHsb(guess)}
+              </div>
             </div>
           </section>
 
           <section
             className="relative flex flex-col justify-end p-8"
-            style={{ background: targetBg, color: "rgba(0,0,0,0.85)" }}
+            style={{ background: targetBg, color: targetStrong }}
           >
             <div>
-              <div
-                className="text-xs uppercase tracking-wider"
-                style={{ color: "rgba(0,0,0,0.55)" }}
-              >
+              <div className="text-xs uppercase tracking-wider" style={{ color: targetMuted }}>
                 original
               </div>
-              <div className="font-mono text-sm">{formatHsb(target)}</div>
+              <div className="font-mono text-sm" style={{ color: targetStrong }}>
+                {formatHsb(target)}
+              </div>
             </div>
           </section>
         </div>
