@@ -23,12 +23,17 @@ function ArrowIcon() {
   );
 }
 
-function describe(d: number): string {
-  if (d < 1) return "Practically pixel-perfect.";
-  if (d < 3) return "Honestly, eerie.";
-  if (d < 6) return "Trained eye.";
-  if (d < 12) return "You remembered a color. Close to this one.";
-  if (d < 25) return "You remembered a color. Just not this one.";
+function proximityScore(deltaE: number): number {
+  // 0..10 closeness; ΔE 0 → 10, ΔE 50+ → 0. Linear.
+  return Math.max(0, Math.min(10, 10 - deltaE * 0.2));
+}
+
+function describe(score: number): string {
+  if (score >= 9.5) return "Practically pixel-perfect.";
+  if (score >= 9) return "Honestly, eerie.";
+  if (score >= 8) return "Trained eye.";
+  if (score >= 6) return "Close. Real close.";
+  if (score >= 3) return "You remembered a color. Just not this one.";
   return "Different color entirely.";
 }
 
@@ -71,13 +76,19 @@ export function AttemptResultCard({
                   className="font-mono text-6xl font-bold leading-none tabular-nums"
                   style={{ color: guessStrong }}
                 >
-                  {deltaE.toFixed(2)}
+                  {proximityScore(deltaE).toFixed(2)}
+                  <span
+                    className="ml-1 text-2xl font-medium"
+                    style={{ color: guessMuted }}
+                  >
+                    / 10
+                  </span>
                 </div>
                 <p
                   className="mt-2 max-w-[14ch] text-right text-base"
                   style={{ color: guessMuted }}
                 >
-                  {describe(deltaE)}
+                  {describe(proximityScore(deltaE))}
                 </p>
               </div>
             </div>
