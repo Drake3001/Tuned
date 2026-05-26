@@ -12,7 +12,7 @@ type Props = {
   formatValue: (v: number) => string;
 };
 
-const TRACK_WIDTH = 56;
+const TRACK_WIDTH = 44;
 
 export function VSlider({
   value,

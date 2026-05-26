@@ -31,8 +31,8 @@ export function CardSidePicker({ value, onChange }: Props) {
 
   return (
     <div
-      className="absolute inset-y-6 left-6 flex items-stretch gap-3 rounded-2xl bg-black/30 p-4 backdrop-blur-md"
-      style={{ width: 232 }}
+      className="absolute bottom-6 left-6 top-16 flex items-stretch gap-2 rounded-2xl bg-black/30 p-3 backdrop-blur-md"
+      style={{ width: 188 }}
     >
       <VSlider
         value={hsb[0]}
