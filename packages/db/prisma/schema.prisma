@@ -1,0 +1,191 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// --- ENUMY ---
+
+enum PlayContext {
+  SOLO
+  MULTIPLAYER
+}
+
+enum SoloDifficulty {
+  EASY // preset generated colors; guess is one of the presets (HSB)
+  HARD // user controls hue, saturation, and brightness
+}
+
+enum MultiplayerGameMode {
+  ROUND_BASED // fixed rounds, highest total score wins
+  BATTLE_ROYALE // configurable lives; worst each round loses one
+}
+
+enum ScoringMode {
+  COLOR_ACCURACY // score from deltaE / closeness
+  SPEED // must be close enough; score from response time
+}
+
+enum LobbyStatus {
+  WAITING
+  IN_GAME
+  FINISHED
+}
+
+enum RoundPhase {
+  MEMORIZE
+  RECALL
+  RESULT
+}
+
+// --- MODELE ---
+
+model User {
+  id         String   @id @default(uuid())
+  keycloakId String   @unique
+  username   String
+  avatarUrl  String?
+  createdAt  DateTime @default(now())
+
+  playerStats   PlayerStats?
+  gameSessions  GameSession[]
+  lobbyPlayers  LobbyPlayer[]
+  hostedLobbies Lobby[]        @relation("LobbyHost")
+  dailyAttempts DailyAttempt[]
+}
+
+model PlayerStats {
+  userId            String    @id
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  soloPlays         Int       @default(0)
+  multiplayerPlays  Int       @default(0)
+  currentStreak     Int       @default(0)
+  streakUpdatedAt   DateTime?
+}
+
+model GameSession {
+  id             String          @id @default(uuid())
+  userId         String
+  user           User            @relation(fields: [userId], references: [id])
+  lobbyId        String?
+  lobby          Lobby?          @relation(fields: [lobbyId], references: [id])
+  context        PlayContext
+  soloDifficulty SoloDifficulty? // required when context = SOLO; null for MULTIPLAYER
+  finalScore     Float?
+  startedAt      DateTime        @default(now())
+  finishedAt     DateTime?
+
+  colorAttempts ColorAttempt[]
+  dailyAttempt  DailyAttempt?
+}
+
+model ColorAttempt {
+  id                 String      @id @default(uuid())
+  sessionId          String
+  session            GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  index              Int // Numer koloru w sesji (1-5)
+  targetHue          Float
+  targetSaturation   Float
+  targetBrightness   Float
+  guessHue           Float
+  guessSaturation    Float
+  guessBrightness    Float
+  deltaE             Decimal     @db.Decimal(5, 2) // CIEDE2000 (computed from HSB → color space as needed)
+  createdAt          DateTime    @default(now())
+}
+
+// ROUND_BASED lobbies require LobbyRoundSettings; BATTLE_ROYALE require LobbyBrSettings (exactly one).
+model Lobby {
+  id                 String              @id @default(uuid())
+  code               String              @unique // 6-znakowy kod pokoju
+  hostUserId         String
+  host               User                @relation("LobbyHost", fields: [hostUserId], references: [id])
+  status             LobbyStatus         @default(WAITING)
+  multiplayerMode    MultiplayerGameMode
+  scoringMode        ScoringMode         @default(COLOR_ACCURACY)
+  answerTimeLimitSec Int? // null = no limit
+  maxPlayers         Int                 @default(8)
+  currentRound       Int                 @default(0)
+  createdAt          DateTime            @default(now())
+  closedAt           DateTime?
+
+  roundSettings LobbyRoundSettings?
+  brSettings    LobbyBrSettings?
+  players       LobbyPlayer[]
+  gameSessions  GameSession[]
+  rounds        Round[]
+}
+
+model LobbyRoundSettings {
+  lobbyId     String @id
+  lobby       Lobby  @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  totalRounds Int
+}
+
+model LobbyBrSettings {
+  lobbyId       String @id
+  lobby         Lobby  @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  startingLives Int
+}
+
+model LobbyPlayer {
+  lobbyId         String
+  lobby           Lobby     @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lives           Int? // null for ROUND_BASED; set from LobbyBrSettings.startingLives on join for BATTLE_ROYALE
+  eliminatedRound Int?
+  finalRank       Int?
+  joinedAt        DateTime  @default(now())
+
+  @@id([lobbyId, userId])
+}
+
+model Round {
+  id           String     @id @default(uuid())
+  lobbyId      String
+  lobby        Lobby      @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  index        Int // Numer rundy w lobby
+  targetColors Json // [{ hue, saturation, brightness }, ...]
+  phase        RoundPhase @default(MEMORIZE)
+
+  roundScores RoundScore[]
+}
+
+model RoundScore {
+  id             String  @id @default(uuid())
+  roundId        String
+  round          Round   @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  userId         String
+  deltaE         Float? // primary for COLOR_ACCURACY
+  responseTimeMs Int? // primary for SPEED
+  score          Float
+  rank           Int
+
+  @@unique([roundId, userId])
+}
+
+model DailyChallenge {
+  day            DateTime       @id @db.Date
+  targetColors   Json // [{ hue, saturation, brightness }, ...]
+  soloDifficulty SoloDifficulty @default(HARD)
+  seed           BigInt
+  createdAt      DateTime       @default(now())
+
+  dailyAttempts DailyAttempt[]
+}
+
+model DailyAttempt {
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  day         DateTime       @db.Date
+  challenge   DailyChallenge @relation(fields: [day], references: [day], onDelete: Cascade)
+  sessionId   String         @unique
+  session     GameSession    @relation(fields: [sessionId], references: [id])
+  score       Float
+  submittedAt DateTime       @default(now())
+
+  @@id([userId, day])
+}
