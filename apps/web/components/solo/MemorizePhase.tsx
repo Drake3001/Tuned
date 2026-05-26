@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { RGB } from "@/lib/game/color";
-import { Timer } from "./Timer";
+import { GameCard, CardTopLeft, CardTopRight } from "./GameCard";
 
 type Props = {
   target: RGB;
@@ -32,16 +32,11 @@ export function MemorizePhase({ target, durationSec, index, total, onComplete }:
   const bg = `rgb(${target[0]}, ${target[1]}, ${target[2]})`;
 
   return (
-    <div
-      className="fixed inset-0 flex items-start justify-between p-6 transition-colors"
-      style={{ background: bg }}
-    >
-      <div className="rounded-md bg-black/60 px-3 py-1.5 text-sm font-medium text-white backdrop-blur">
-        memorize · {index + 1} / {total}
-      </div>
-      <div className="rounded-md bg-black/60 px-3 py-1.5 text-white backdrop-blur">
-        <Timer seconds={remaining} />
-      </div>
-    </div>
+    <GameCard background={bg}>
+      <CardTopLeft>
+        {index + 1} / {total}
+      </CardTopLeft>
+      <CardTopRight>{remaining.toFixed(1)}s</CardTopRight>
+    </GameCard>
   );
 }

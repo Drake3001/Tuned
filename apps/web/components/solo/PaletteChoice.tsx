@@ -27,7 +27,7 @@ export function PaletteChoice({ target, onSelect }: Props) {
               type="button"
               key={i}
               onClick={() => setSelected(c)}
-              className="h-20 w-20 rounded-xl border-4 transition hover:scale-105 active:scale-95"
+              className="h-16 w-16 rounded-xl border-4 transition hover:scale-105 active:scale-95"
               style={{
                 background: `rgb(${c[0]}, ${c[1]}, ${c[2]})`,
                 borderColor: isSelected ? "var(--tuned-orange)" : "transparent",
