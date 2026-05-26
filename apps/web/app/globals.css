@@ -7,6 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-tuned-orange: var(--tuned-orange);
+  --color-tuned-orange-fg: var(--tuned-orange-fg);
+  --color-tuned-muted: var(--tuned-muted);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
@@ -49,6 +52,9 @@
 }
 
 :root {
+  --tuned-orange: #ff6b3d;
+  --tuned-orange-fg: #0b0b0c;
+  --tuned-muted: #9ca3af;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -126,5 +132,20 @@
   }
   html {
     @apply font-sans;
+  }
+  *:focus-visible {
+    outline: 2px solid var(--tuned-orange);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
