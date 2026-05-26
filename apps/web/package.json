@@ -9,10 +9,13 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@repo/db": "*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dotenv": "^17.2.2",
     "lucide-react": "^1.14.0",
     "next": "16.2.4",
+    "next-auth": "^4.24.14",
     "radix-ui": "^1.4.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",

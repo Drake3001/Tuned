@@ -37,4 +37,4 @@ coverage/
 # Vercel / Deployment
 .vercel/
 
-./infra/keycloak/realm-export.json
+infra/keycloak/
