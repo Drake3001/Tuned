@@ -18,36 +18,47 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account }) {
-      if (account?.provider === "keycloak" && account.providerAccountId) {
-        try {
-          await prisma.user.upsert({
-            where: { keycloakId: account.providerAccountId },
-            update: { username: user.name ?? "Gracz" },
-            create: {
-              keycloakId: account.providerAccountId,
-              username: user.name ?? "Gracz",
-              playerStats: { create: {} },
-            },
-          });
-        } catch (error) {
-          console.error("Błąd zapisu gracza do bazy:", error);
-          return false;
-        }
-      }
-
+    async signIn() {
       return true;
     },
-    async jwt({ token, account }) {
-      if (account?.provider === "keycloak" && account.providerAccountId) {
-        (token as any).keycloakId = account.providerAccountId;
+    async jwt({ token, account, profile, user }) {
+      // On first sign-in with Keycloak, persist user and store our DB userId in the JWT.
+      if (account?.provider === "keycloak") {
+        const keycloakId =
+          account.providerAccountId ?? (typeof (profile as any)?.sub === "string" ? ((profile as any).sub as string) : null);
+        if (keycloakId) {
+          const username =
+            (typeof (profile as any)?.preferred_username === "string" && (profile as any).preferred_username) ||
+            user?.name ||
+            "Gracz";
+
+          try {
+            const dbUser = await prisma.user.upsert({
+              where: { keycloakId },
+              update: { username },
+              create: {
+                keycloakId,
+                username,
+                playerStats: { create: {} },
+              },
+              select: { id: true, username: true },
+            });
+
+            token.keycloakId = keycloakId;
+            token.userId = dbUser.id;
+            token.username = dbUser.username;
+          } catch (error) {
+            console.error("Błąd zapisu gracza do bazy:", error);
+          }
+        }
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        if (token.sub) (session.user as any).id = token.sub;
-        if ((token as any).keycloakId) (session.user as any).keycloakId = (token as any).keycloakId;
+        if (token.userId) session.user.userId = token.userId;
+        if (token.username) session.user.username = token.username;
+        if (token.keycloakId) session.user.keycloakId = token.keycloakId;
       }
       return session;
     },
