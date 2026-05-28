@@ -11,28 +11,12 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s
       retries: 5
-
-  # Postgres — this runs once after DB is healthy.
-  postgres-init-keycloak:
-    image: postgres:15-alpine
-    env_file: .env
-    environment:
-      PGPASSWORD: ${POSTGRES_PASSWORD}
-    depends_on:
-      postgres:
-        condition: service_healthy
-    entrypoint: ["/bin/sh", "-ec"]
-    command:
-      - |
-        psql -h postgres -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -tc \
-          "SELECT 1 FROM pg_database WHERE datname = 'keycloak'" | grep -q 1 \
-          || psql -h postgres -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -c "CREATE DATABASE keycloak"
-    restart: "no"
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
@@ -55,8 +39,25 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      postgres-init-keycloak:
-        condition: service_completed_successfully
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: tuned-web
+    env_file: .env
+    environment:
+      # Inside compose network, use service DNS names.
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+      AUTH_KEYCLOAK_ISSUER: http://keycloak:8080/realms/${KC_REALM}
+      NEXTAUTH_URL: http://localhost:3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
 
 volumes:
   postgres_data:
