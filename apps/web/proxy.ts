@@ -4,7 +4,7 @@ import { getToken } from "next-auth/jwt";
 
 const PROTECTED_PREFIXES = ["/play", "/daily", "/lobby"];
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
   const isProtected = PROTECTED_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
