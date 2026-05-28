@@ -31,3 +31,15 @@ registerHandlers(io, lobbyManager);
 httpServer.listen(env.wsPort, () => {
   console.log(`[ws] listening on port ${env.wsPort}`);
 });
+
+function shutdown(): void {
+  console.log("[ws] shutting down...");
+  io.close(() => {
+    httpServer.close(() => {
+      process.exit(0);
+    });
+  });
+}
+
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);

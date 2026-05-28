@@ -161,7 +161,7 @@ model RoundScore {
   round          Round   @relation(fields: [roundId], references: [id], onDelete: Cascade)
   userId         String
   deltaE         Float? // primary for COLOR_ACCURACY
-  responseTimeMs Int? // primary for SPEED
+  responseTimeMs BigInt? // primary for SPEED
   score          Float
   rank           Int
 

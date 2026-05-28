@@ -51,7 +51,7 @@ export function registerHandlers(io: Server, lobbyManager: LobbyManager): void {
 
       const state = orchestrator.getState();
       if (state) {
-        socket.emit("lobby:state", state);
+        orchestrator.emitState(state);
       }
 
       ack?.({ ok: true });
