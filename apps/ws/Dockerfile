@@ -28,10 +28,13 @@ ENV NODE_ENV=production
 ENV WS_PORT=3001
 ENV HOSTNAME=0.0.0.0
 
-COPY --from=build /app/apps/ws/dist ./apps/ws/dist
-COPY --from=build /app/apps/ws/package.json ./apps/ws/package.json
-COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/package.json ./package.json
+COPY --from=build /app/apps/ws/package.json ./apps/ws/package.json
+COPY --from=build /app/apps/ws/src ./apps/ws/src
+COPY --from=build /app/packages/db/package.json ./packages/db/package.json
+COPY --from=build /app/packages/db/src ./packages/db/src
+COPY --from=build /app/packages/db/generated ./packages/db/generated
+COPY --from=build /app/node_modules ./node_modules
 
 EXPOSE 3001
-CMD ["npm", "-w", "apps/ws", "run", "start"]
+CMD ["npx", "tsx", "apps/ws/src/index.ts"]

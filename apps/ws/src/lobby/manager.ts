@@ -13,7 +13,11 @@ export class LobbyManager {
     const normalized = code.toUpperCase();
     let orchestrator = this.orchestrators.get(normalized);
     if (!orchestrator) {
-      orchestrator = new LobbyOrchestrator({ code: normalized, io: this.io });
+      orchestrator = new LobbyOrchestrator({
+        code: normalized,
+        io: this.io,
+        onFinished: () => this.dispose(normalized),
+      });
       this.orchestrators.set(normalized, orchestrator);
     }
     return orchestrator;
@@ -23,13 +27,22 @@ export class LobbyManager {
     return this.orchestrators.get(code.toUpperCase());
   }
 
-  /** Remove orchestrator when lobby ends or room is empty (stub). */
   dispose(code: string): void {
     const normalized = code.toUpperCase();
     const orchestrator = this.orchestrators.get(normalized);
     if (orchestrator) {
       orchestrator.dispose();
       this.orchestrators.delete(normalized);
+    }
+  }
+
+  /** Dispose orchestrator if no sockets remain in the lobby room. */
+  async disposeIfRoomEmpty(io: Server, code: string): Promise<void> {
+    const normalized = code.toUpperCase();
+    const room = `lobby:${normalized}`;
+    const sockets = await io.in(room).fetchSockets();
+    if (sockets.length === 0) {
+      this.dispose(normalized);
     }
   }
 }

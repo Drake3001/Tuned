@@ -27,7 +27,7 @@ async function assertLobbyMember(code: string, userId: string): Promise<boolean>
 }
 
 export function registerHandlers(io: Server, lobbyManager: LobbyManager): void {
-  io.on("connection", (socket) => {
+  io.on("connection", (socket: Socket) => {
     console.log(`[ws] connected userId=${socket.data.userId}`);
 
     socket.on("lobby:join", async (code: unknown, ack?: (result: unknown) => void) => {
@@ -51,7 +51,7 @@ export function registerHandlers(io: Server, lobbyManager: LobbyManager): void {
 
       const state = orchestrator.getState();
       if (state) {
-        io.to(lobbyRoom(normalized)).emit("lobby:state", state);
+        socket.emit("lobby:state", state);
       }
 
       ack?.({ ok: true });
@@ -59,8 +59,18 @@ export function registerHandlers(io: Server, lobbyManager: LobbyManager): void {
 
     socket.on("lobby:leave", async (code: unknown) => {
       if (typeof code !== "string" || code.length === 0) return;
-      await socket.leave(lobbyRoom(code));
-      // TODO: update LobbyPlayer / disconnected state when IN_GAME
+
+      const normalized = code.toUpperCase();
+      await socket.leave(lobbyRoom(normalized));
+
+      const orchestrator = lobbyManager.get(normalized);
+      const state = orchestrator?.getState();
+
+      if (orchestrator && state?.status === "WAITING") {
+        await orchestrator.removePlayer(socket.data.userId);
+      }
+
+      await lobbyManager.disposeIfRoomEmpty(io, normalized);
     });
 
     socket.on("host:start", async (code: unknown) => {
@@ -71,6 +81,9 @@ export function registerHandlers(io: Server, lobbyManager: LobbyManager): void {
 
       const normalized = code.toUpperCase();
       const orchestrator = lobbyManager.getOrCreate(normalized);
+      if (!orchestrator.getState()) {
+        await orchestrator.hydrate();
+      }
       await orchestrator.start(socket.data.userId);
     });
 
@@ -90,8 +103,13 @@ export function registerHandlers(io: Server, lobbyManager: LobbyManager): void {
       await orchestrator.submit(socket.data.userId, guess);
     });
 
-    socket.on("disconnect", () => {
+    socket.on("disconnect", async () => {
       console.log(`[ws] disconnected userId=${socket.data.userId}`);
+      const rooms = [...socket.rooms].filter((r) => r.startsWith("lobby:"));
+      for (const room of rooms) {
+        const code = room.replace("lobby:", "");
+        await lobbyManager.disposeIfRoomEmpty(io, code);
+      }
     });
   });
 }
