@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { InterleavedPhase } from "@/components/solo/InterleavedPhase";
 import { ResultScreen } from "@/components/solo/ResultScreen";
-import { mockApi } from "@/lib/mock/api";
+import { fetchJson } from "@/lib/api/client";
 import type { RGB } from "@/lib/game/color";
 
-type Phase = "loading" | "playing" | "result" | "error";
+type Phase = "loading" | "playing" | "result" | "error" | "alreadyPlayed";
 
 type ResultData = {
   finalScore: number;
@@ -28,11 +28,14 @@ export default function DailyPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    mockApi
-      .getDailyToday()
+    fetchJson<{ day: string; targets: RGB[]; alreadyPlayed: boolean }>("/api/daily/today")
       .then((d) => {
-        setTargets(d.targets);
         setDay(d.day);
+        if (d.alreadyPlayed) {
+          setPhase("alreadyPlayed");
+          return;
+        }
+        setTargets(d.targets);
         setPhase("playing");
       })
       .catch((e: unknown) => {
@@ -43,7 +46,11 @@ export default function DailyPage() {
 
   const submit = async (guesses: RGB[]) => {
     try {
-      const data = await mockApi.submitDaily(guesses);
+      const data = await fetchJson<ResultData>("/api/daily/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ guesses }),
+      });
       setResult(data);
       setPhase("result");
     } catch (e) {
@@ -55,6 +62,12 @@ export default function DailyPage() {
   if (phase === "loading") return <p className="p-12 text-center">loading…</p>;
   if (phase === "error")
     return <p className="p-12 text-center text-red-400">{error}</p>;
+  if (phase === "alreadyPlayed")
+    return (
+      <p className="p-12 text-center text-muted-foreground">
+        you already played today&apos;s challenge ({day})
+      </p>
+    );
   if (phase === "playing")
     return <InterleavedPhase targets={targets} difficulty="HARD" onComplete={submit} />;
   if (phase === "result" && result)

@@ -7,7 +7,15 @@ import { BattleRoundScreen } from "@/components/lobby/BattleRoundScreen";
 import { EndgameScreen } from "@/components/lobby/EndgameScreen";
 
 export function LobbyClient({ code }: { code: string }) {
-  const { state, me, start, submit } = useLobbyState(code);
+  const { state, me, error, start, submit } = useLobbyState(code);
+
+  if (error) {
+    return (
+      <main className="p-12 text-center text-red-400">
+        {error}
+      </main>
+    );
+  }
 
   if (!state || !me) {
     return (

@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { prisma } from "@repo/db";
-import { withOptionalAuth } from "../../_utils/auth";
+import { withOptionalAuth } from "../../../_utils/auth";
 import { jsonError, jsonOk } from "@/lib/api/http";
 import { generateTargets } from "@/lib/api/targets";
 import { putSoloSession } from "@/lib/api/solo-store";

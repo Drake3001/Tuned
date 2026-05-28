@@ -2,15 +2,10 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
-const PROTECTED_PREFIXES = ["/play", "/daily", "/lobby"];
-
 export async function proxy(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
-  const isProtected = PROTECTED_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
-  );
 
-  if (!isProtected) {
+  if (pathname === "/") {
     return NextResponse.next();
   }
 
@@ -29,5 +24,5 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/play/:path*", "/daily/:path*", "/lobby/:path*"],
+  matcher: ["/((?!_next|api|favicon.ico).*)"],
 };
