@@ -9,7 +9,7 @@ function getSocketTokenSecret() {
   return new TextEncoder().encode(secret);
 }
 
-export const GET = withAuth(async ({ userId, username }) => {
+export const GET = withAuth(async (_req, { userId, username }) => {
   const nowSeconds = Math.floor(Date.now() / 1000);
   const expSeconds = nowSeconds + 15 * 60;
 
@@ -21,4 +21,3 @@ export const GET = withAuth(async ({ userId, username }) => {
 
   return Response.json({ token, expiresAt: expSeconds });
 });
-
