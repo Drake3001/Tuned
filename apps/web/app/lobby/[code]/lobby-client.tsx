@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useLobbyState } from "@/lib/hooks/useLobbyState";
 import { LobbyCode } from "@/components/lobby/LobbyCode";
 import { PlayerList } from "@/components/lobby/PlayerList";
@@ -7,7 +8,25 @@ import { BattleRoundScreen } from "@/components/lobby/BattleRoundScreen";
 import { EndgameScreen } from "@/components/lobby/EndgameScreen";
 
 export function LobbyClient({ code }: { code: string }) {
-  const { state, me, error, start, submit } = useLobbyState(code);
+  const { state, me, error, errorCode, pendingWsSync, start, submit } = useLobbyState(code);
+
+  if (errorCode === "LOBBY_NOT_LIVE") {
+    return (
+      <main className="mx-auto max-w-md px-6 py-12 text-center">
+        <p className="text-muted-foreground">
+          This match is no longer live. Ask your friends for a new lobby or check the
+          endgame screen.
+        </p>
+        <Link
+          href="/"
+          className="mt-6 inline-block text-sm underline"
+          style={{ color: "var(--tuned-orange)" }}
+        >
+          back home
+        </Link>
+      </main>
+    );
+  }
 
   if (error) {
     return (
@@ -17,7 +36,7 @@ export function LobbyClient({ code }: { code: string }) {
     );
   }
 
-  if (!state || !me) {
+  if (!state || !me || pendingWsSync) {
     return (
       <main className="p-12 text-center text-muted-foreground">
         loading lobby…

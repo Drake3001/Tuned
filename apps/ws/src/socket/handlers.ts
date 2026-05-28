@@ -11,11 +11,14 @@ function emitLobbyError(socket: Socket, code: string, message: string): void {
   socket.emit("lobby:error", { code, message });
 }
 
-async function assertLobbyMember(code: string, userId: string): Promise<boolean> {
+async function assertLobbyMember(
+  code: string,
+  userId: string,
+): Promise<{ isMember: boolean; dbStatus: string | null }> {
   const lobby = await prisma.lobby.findUnique({
     where: { code: code.toUpperCase() },
     select: {
-      id: true,
+      status: true,
       players: {
         where: { userId },
         select: { userId: true },
@@ -23,7 +26,14 @@ async function assertLobbyMember(code: string, userId: string): Promise<boolean>
     },
   });
 
-  return lobby != null && lobby.players.length > 0;
+  if (lobby == null) {
+    return { isMember: false, dbStatus: null };
+  }
+
+  return {
+    isMember: lobby.players.length > 0,
+    dbStatus: lobby.status,
+  };
 }
 
 export function registerHandlers(io: Server, lobbyManager: LobbyManager): void {
@@ -38,16 +48,27 @@ export function registerHandlers(io: Server, lobbyManager: LobbyManager): void {
       }
 
       const normalized = code.toUpperCase();
-      const isMember = await assertLobbyMember(normalized, socket.data.userId);
+      const { isMember, dbStatus } = await assertLobbyMember(normalized, socket.data.userId);
       if (!isMember) {
         emitLobbyError(socket, "FORBIDDEN", "You are not a member of this lobby");
         ack?.({ ok: false });
         return;
       }
 
-      await socket.join(lobbyRoom(normalized));
       const orchestrator = lobbyManager.getOrCreate(normalized);
       await orchestrator.hydrate();
+
+      if (dbStatus === "IN_GAME" && !orchestrator.isLive()) {
+        emitLobbyError(
+          socket,
+          "LOBBY_NOT_LIVE",
+          "This match is no longer live. Ask your friends for a new lobby.",
+        );
+        ack?.({ ok: false });
+        return;
+      }
+
+      await socket.join(lobbyRoom(normalized));
 
       const state = orchestrator.getState();
       if (state) {

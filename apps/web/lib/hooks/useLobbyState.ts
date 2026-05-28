@@ -19,12 +19,27 @@ type LobbyErrorPayload = {
   message: string;
 };
 
+function joinLobbyRoom(socket: Socket, code: string): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    socket.emit("lobby:join", code, (result: { ok?: boolean }) => {
+      if (result?.ok) {
+        resolve();
+        return;
+      }
+      reject(new Error("Failed to join lobby room"));
+    });
+  });
+}
+
 export function useLobbyState(code: string) {
   const { data: session, status } = useSession();
   const [state, setState] = useState<LobbyState | null>(null);
   const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
+  const [pendingWsSync, setPendingWsSync] = useState(false);
   const socketRef = useRef<Socket | null>(null);
+  const statusRef = useRef<LobbyState["status"] | null>(null);
   const normalizedCode = code.toUpperCase();
 
   const loadLobby = useCallback(async () => {
@@ -34,6 +49,7 @@ export function useLobbyState(code: string) {
 
     const { lobby } = await fetchJson<{ lobby: ApiLobby }>(`/api/lobby/${normalizedCode}`);
     setState(mapApiLobbyToState(lobby));
+    setPendingWsSync(lobby.status === "IN_GAME");
   }, [normalizedCode]);
 
   useEffect(() => {
@@ -48,15 +64,36 @@ export function useLobbyState(code: string) {
 
     setMe({ userId, username });
     setError(null);
+    setErrorCode(null);
 
     let cancelled = false;
+    let initialJoinDone = false;
+    let lobbyErrorReceived = false;
 
     const onState = (next: LobbyState) => {
-      if (!cancelled) setState(next);
+      if (cancelled) return;
+      statusRef.current = next.status;
+      setState(next);
+      setPendingWsSync(false);
     };
 
     const onLobbyError = (payload: LobbyErrorPayload) => {
-      if (!cancelled) setError(payload.message);
+      if (cancelled) return;
+      lobbyErrorReceived = true;
+      setError(payload.message);
+      setErrorCode(payload.code);
+      setPendingWsSync(false);
+    };
+
+    const onConnect = () => {
+      if (cancelled || !initialJoinDone) return;
+      const socket = socketRef.current;
+      if (!socket) return;
+      void joinLobbyRoom(socket, normalizedCode).catch((e: unknown) => {
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : "Failed to reconnect to lobby");
+        }
+      });
     };
 
     void (async () => {
@@ -70,20 +107,15 @@ export function useLobbyState(code: string) {
         socketRef.current = socket;
         socket.on("lobby:state", onState);
         socket.on("lobby:error", onLobbyError);
+        socket.on("connect", onConnect);
 
-        await new Promise<void>((resolve, reject) => {
-          socket.emit("lobby:join", normalizedCode, (result: { ok?: boolean }) => {
-            if (result?.ok) {
-              resolve();
-              return;
-            }
-            reject(new Error("Failed to join lobby room"));
-          });
-        });
+        await joinLobbyRoom(socket, normalizedCode);
+        initialJoinDone = true;
       } catch (e: unknown) {
-        if (!cancelled) {
+        if (!cancelled && !lobbyErrorReceived) {
           setError(e instanceof Error ? e.message : "Failed to connect to lobby");
           setState(null);
+          setPendingWsSync(false);
         }
       }
     })();
@@ -94,7 +126,10 @@ export function useLobbyState(code: string) {
       if (socket) {
         socket.off("lobby:state", onState);
         socket.off("lobby:error", onLobbyError);
-        socket.emit("lobby:leave", normalizedCode);
+        socket.off("connect", onConnect);
+        if (statusRef.current === "WAITING" || statusRef.current === null) {
+          socket.emit("lobby:leave", normalizedCode);
+        }
       }
       socketRef.current = null;
     };
@@ -111,5 +146,5 @@ export function useLobbyState(code: string) {
     [normalizedCode],
   );
 
-  return { state, me, error, start, submit, reload: loadLobby };
+  return { state, me, error, errorCode, pendingWsSync, start, submit, reload: loadLobby };
 }

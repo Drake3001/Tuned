@@ -91,6 +91,17 @@ export class LobbyOrchestrator {
     return this.state;
   }
 
+  /** True when an in-progress or recently finished match is held in memory. */
+  isLive(): boolean {
+    const status = this.state?.status;
+    return (
+      status === "MEMORIZE" ||
+      status === "RECALL" ||
+      status === "SCORING" ||
+      status === "FINISHED"
+    );
+  }
+
   async hydrate(): Promise<void> {
     if (this.state && !["WAITING", "FINISHED"].includes(this.state.status)) {
       return;

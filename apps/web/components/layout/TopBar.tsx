@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { UserMenu } from "./UserMenu";
+import { ResumeLobbyBanner } from "@/components/lobby/ResumeLobbyBanner";
 
 export function TopBar() {
   return (
@@ -12,7 +13,7 @@ export function TopBar() {
           <span style={{ color: "var(--tuned-orange)" }}>tuned</span>
           <span>.gg</span>
         </Link>
-        <nav className="hidden gap-6 text-sm text-muted-foreground sm:flex">
+        <nav className="hidden items-center gap-6 text-sm text-muted-foreground sm:flex">
           <Link href="/play/solo" className="hover:text-foreground">
             play
           </Link>
@@ -22,6 +23,7 @@ export function TopBar() {
           <Link href="/daily" className="hover:text-foreground">
             daily
           </Link>
+          <ResumeLobbyBanner />
         </nav>
         <UserMenu />
       </div>
