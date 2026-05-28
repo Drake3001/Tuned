@@ -1,24 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { getMockSession, signInMock, signOutMock } from "@/lib/mock/auth";
+import { signIn, signOut, useSession } from "next-auth/react";
 
 export function UserMenu() {
-  const [session, setSession] = useState<{ username: string } | null>(null);
+  const { data: session, status } = useSession();
 
-  useEffect(() => {
-    setSession(getMockSession());
-    const onUpdate = () => setSession(getMockSession());
-    window.addEventListener("tuned:session", onUpdate);
-    return () => window.removeEventListener("tuned:session", onUpdate);
-  }, []);
+  if (status === "loading") {
+    return <span className="text-sm text-muted-foreground">…</span>;
+  }
 
-  if (!session) {
+  if (!session?.user?.userId) {
     return (
       <button
         type="button"
-        onClick={() => signInMock()}
+        onClick={() => signIn("keycloak")}
         className="rounded-md border border-border px-3 py-1.5 text-sm hover:bg-muted"
       >
         sign in
@@ -26,18 +22,20 @@ export function UserMenu() {
     );
   }
 
+  const username = session.user.username ?? "player";
+
   return (
     <div className="flex items-center gap-3 text-sm">
       <Link
-        href={`/u/${session.username}`}
+        href={`/u/${username}`}
         className="hover:underline"
         style={{ color: "var(--tuned-orange)" }}
       >
-        {session.username}
+        {username}
       </Link>
       <button
         type="button"
-        onClick={() => signOutMock()}
+        onClick={() => signOut()}
         className="text-muted-foreground hover:text-foreground"
       >
         sign out

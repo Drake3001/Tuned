@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { LeaderboardTable } from "@/components/leaderboard/LeaderboardTable";
-import { mockApi } from "@/lib/mock/api";
+import { fetchJson } from "@/lib/api/client";
 
 type Tab = "solo" | "br" | "today";
 type Row = {
@@ -23,7 +23,12 @@ export default function LeaderboardPage() {
   const [rows, setRows] = useState<Row[]>([]);
 
   useEffect(() => {
-    mockApi.getLeaderboard(tab).then(setRows).catch(() => setRows([]));
+    const url =
+      tab === "today" ? "/api/leaderboard/today" : `/api/leaderboard/all-time?mode=${tab}`;
+
+    fetchJson<Row[]>(url)
+      .then(setRows)
+      .catch(() => setRows([]));
   }, [tab]);
 
   const current = TABS.find((t) => t.key === tab)!;

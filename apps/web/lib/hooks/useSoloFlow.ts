@@ -1,8 +1,6 @@
-"use client";
-
 import { useCallback, useEffect, useState } from "react";
 import type { RGB } from "@/lib/game/color";
-import { mockApi } from "@/lib/mock/api";
+import { fetchJson } from "@/lib/api/client";
 
 export type Phase = "loading" | "playing" | "submitting" | "result" | "error";
 
@@ -32,8 +30,15 @@ export function useSoloFlow(difficulty: "EASY" | "HARD") {
     let cancelled = false;
     setPhase("loading");
     setError(null);
-    mockApi
-      .startSolo(difficulty)
+
+    fetchJson<{ sessionId: string; difficulty: "EASY" | "HARD"; targets: RGB[] }>(
+      "/api/game/solo/start",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ difficulty }),
+      },
+    )
       .then((data) => {
         if (cancelled) return;
         setSessionId(data.sessionId);
@@ -45,6 +50,7 @@ export function useSoloFlow(difficulty: "EASY" | "HARD") {
         setError(e instanceof Error ? e.message : "unknown error");
         setPhase("error");
       });
+
     return () => {
       cancelled = true;
     };
@@ -55,7 +61,11 @@ export function useSoloFlow(difficulty: "EASY" | "HARD") {
       if (!sessionId) return;
       setPhase("submitting");
       try {
-        const data = await mockApi.submitSolo(sessionId, guesses);
+        const data = await fetchJson<Result>("/api/game/solo/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId, guesses }),
+        });
         setResult(data);
         setPhase("result");
       } catch (e) {

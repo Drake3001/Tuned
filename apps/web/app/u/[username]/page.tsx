@@ -3,9 +3,20 @@
 import { use, useEffect, useState } from "react";
 import { StatCards } from "@/components/profile/StatCards";
 import { ProgressChart } from "@/components/profile/ProgressChart";
-import { mockApi } from "@/lib/mock/api";
+import { fetchJson } from "@/lib/api/client";
 
-type Profile = Awaited<ReturnType<typeof mockApi.getProfile>>;
+type ProfileData = {
+  user: { username: string; avatarUrl: string | null; createdAt: string };
+  stats: {
+    soloPlays: number;
+    multiplayerPlays: number;
+    currentStreak: number;
+    bestSolo: number;
+    avgDeltaE: number;
+    brWins: number;
+  } | null;
+  daily: Array<{ day: string; avgScore: number; plays: number }>;
+};
 
 export default function ProfilePage({
   params,
@@ -13,12 +24,19 @@ export default function ProfilePage({
   params: Promise<{ username: string }>;
 }) {
   const { username } = use(params);
-  const [data, setData] = useState<Profile | null>(null);
+  const [data, setData] = useState<ProfileData | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    mockApi.getProfile(username).then(setData).catch(() => setData(null));
+    fetchJson<ProfileData>(`/api/stats/${encodeURIComponent(username)}`)
+      .then(setData)
+      .catch((e: unknown) => {
+        setError(e instanceof Error ? e.message : "failed to load profile");
+        setData(null);
+      });
   }, [username]);
 
+  if (error) return <p className="p-12 text-center text-red-400">{error}</p>;
   if (!data) return <p className="p-12 text-center text-muted-foreground">loading…</p>;
 
   return (
@@ -48,7 +66,7 @@ export default function ProfilePage({
                 soloPlays: data.stats.soloPlays,
                 avgDeltaE: data.stats.avgDeltaE,
                 bestSolo: data.stats.bestSolo,
-                brPlayed: data.stats.brPlayed,
+                brPlayed: data.stats.multiplayerPlays,
                 brWins: data.stats.brWins,
               }
             : null

@@ -1,0 +1,1 @@
+{"version":3,"file":"middleware.d.ts","sourceRoot":"","sources":["../../src/socket/middleware.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,MAAM,EAAE,MAAM,WAAW,CAAC;AAGxC,OAAO,QAAQ,WAAW,CAAC;IACzB,UAAU,UAAU;QAClB,MAAM,EAAE,MAAM,CAAC;QACf,QAAQ,CAAC,EAAE,MAAM,CAAC;KACnB;CACF;AAED,wBAAgB,sBAAsB,CAAC,EAAE,EAAE,MAAM,GAAG,IAAI,CAgBvD"}

@@ -1,57 +1,115 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useSession } from "next-auth/react";
+import type { Socket } from "socket.io-client";
 import type { LobbyState } from "@/lib/mock/lobby-types";
-import { channelName, loadLobby } from "@/lib/mock/lobby-store";
-import { LobbyDriver } from "@/lib/mock/lobby-orchestrator";
-import { requireMockSession, type MockSession } from "@/lib/mock/auth";
 import type { RGB } from "@/lib/game/color";
+import { fetchJson } from "@/lib/api/client";
+import { mapApiLobbyToState, type ApiLobby } from "@/lib/api/lobby-mapper";
+import { getSocket } from "@/lib/socket";
+
+type Me = {
+  userId: string;
+  username: string;
+};
+
+type LobbyErrorPayload = {
+  code: string;
+  message: string;
+};
 
 export function useLobbyState(code: string) {
+  const { data: session, status } = useSession();
   const [state, setState] = useState<LobbyState | null>(null);
-  const [me, setMe] = useState<MockSession | null>(null);
-  const driverRef = useRef<LobbyDriver | null>(null);
-  const channelRef = useRef<BroadcastChannel | null>(null);
+  const [me, setMe] = useState<Me | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const socketRef = useRef<Socket | null>(null);
+  const normalizedCode = code.toUpperCase();
+
+  const loadLobby = useCallback(async () => {
+    await fetchJson<{ lobby: ApiLobby }>(`/api/lobby/${normalizedCode}/join`, {
+      method: "POST",
+    });
+
+    const { lobby } = await fetchJson<{ lobby: ApiLobby }>(`/api/lobby/${normalizedCode}`);
+    setState(mapApiLobbyToState(lobby));
+  }, [normalizedCode]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const session = requireMockSession();
-    setMe(session);
-    const initial = loadLobby(code);
-    if (initial) setState(initial);
+    if (status === "loading") return;
 
-    const ch = new BroadcastChannel(channelName(code));
-    channelRef.current = ch;
-    ch.onmessage = (e) => {
-      const data = e.data as LobbyState;
-      if (data?.code === code) setState(data);
+    const userId = session?.user?.userId;
+    const username = session?.user?.username;
+    if (!userId || !username) {
+      setError("Not authenticated");
+      return;
+    }
+
+    setMe({ userId, username });
+    setError(null);
+
+    let cancelled = false;
+
+    const onState = (next: LobbyState) => {
+      if (!cancelled) setState(next);
     };
 
-    const broadcast = (next: LobbyState) => {
-      setState(next);
+    const onLobbyError = (payload: LobbyErrorPayload) => {
+      if (!cancelled) setError(payload.message);
+    };
+
+    void (async () => {
       try {
-        ch.postMessage(next);
-      } catch {
-        // ignore disconnected channels
+        await loadLobby();
+        if (cancelled) return;
+
+        const socket = await getSocket();
+        if (cancelled) return;
+
+        socketRef.current = socket;
+        socket.on("lobby:state", onState);
+        socket.on("lobby:error", onLobbyError);
+
+        await new Promise<void>((resolve, reject) => {
+          socket.emit("lobby:join", normalizedCode, (result: { ok?: boolean }) => {
+            if (result?.ok) {
+              resolve();
+              return;
+            }
+            reject(new Error("Failed to join lobby room"));
+          });
+        });
+      } catch (e: unknown) {
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : "Failed to connect to lobby");
+          setState(null);
+        }
       }
-    };
-    const driver = new LobbyDriver(code, broadcast);
-    driverRef.current = driver;
+    })();
 
     return () => {
-      driver.dispose();
-      ch.close();
+      cancelled = true;
+      const socket = socketRef.current;
+      if (socket) {
+        socket.off("lobby:state", onState);
+        socket.off("lobby:error", onLobbyError);
+        socket.emit("lobby:leave", normalizedCode);
+      }
+      socketRef.current = null;
     };
-  }, [code]);
+  }, [loadLobby, normalizedCode, session?.user?.userId, session?.user?.username, status]);
 
-  const start = () => {
-    driverRef.current?.hostStart();
-  };
+  const start = useCallback(() => {
+    socketRef.current?.emit("host:start", normalizedCode);
+  }, [normalizedCode]);
 
-  const submit = (guess: RGB) => {
-    if (!me) return;
-    driverRef.current?.submitForUser(me.userId, guess);
-  };
+  const submit = useCallback(
+    (guess: RGB) => {
+      socketRef.current?.emit("player:submit", normalizedCode, guess);
+    },
+    [normalizedCode],
+  );
 
-  return { state, me, start, submit };
+  return { state, me, error, start, submit, reload: loadLobby };
 }
