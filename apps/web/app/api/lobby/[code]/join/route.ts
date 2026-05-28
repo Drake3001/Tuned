@@ -76,11 +76,23 @@ export const POST = withAuth(async (_req, auth, { params }) => {
     return jsonError("Lobby not found", 404);
   }
 
-  if (lobby.status !== "WAITING") {
-    return jsonError("Lobby is not accepting players", 409);
+  const alreadyJoined = lobby.players.some((player) => player.userId === auth.userId);
+
+  if (lobby.status === "FINISHED") {
+    return jsonError("Lobby has finished", 409);
   }
 
-  const alreadyJoined = lobby.players.some((player) => player.userId === auth.userId);
+  if (lobby.status === "IN_GAME") {
+    if (!alreadyJoined) {
+      return jsonError("Lobby is not accepting players", 409);
+    }
+    const full = await prisma.lobby.findUnique({
+      where: { code: normalizedCode },
+      include: lobbyInclude,
+    });
+    return jsonOk({ lobby: serializeLobby(full!) });
+  }
+
   if (alreadyJoined) {
     const full = await prisma.lobby.findUnique({
       where: { code: normalizedCode },
