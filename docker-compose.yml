@@ -59,5 +59,21 @@ services:
       keycloak:
         condition: service_started
 
+  ws:
+    build:
+      context: .
+      dockerfile: apps/ws/Dockerfile
+    container_name: tuned-ws
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+      WS_PORT: 3001
+      WS_CORS_ORIGIN: http://localhost:3000
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   postgres_data:
