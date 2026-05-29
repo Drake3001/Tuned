@@ -17,6 +17,7 @@ export function CreateLobbyModal({ open, onClose, onCreated }: Props) {
   const [livesInitial, setLivesInitial] = useState(3);
   const [roundsTotal, setRoundsTotal] = useState(5);
   const [maxPlayers, setMaxPlayers] = useState(4);
+  const [answerTimeLimitSec, setAnswerTimeLimitSec] = useState(12);
   const [submitting, setSubmitting] = useState(false);
 
   if (!open) return null;
@@ -33,6 +34,7 @@ export function CreateLobbyModal({ open, onClose, onCreated }: Props) {
           livesInitial: mode === "BATTLE_ROYALE" ? livesInitial : undefined,
           roundsTotal: mode === "ROUND_BASED" ? roundsTotal : undefined,
           maxPlayers,
+          answerTimeLimitSec,
         }),
       });
       if (!res.ok) throw new Error(`create failed (${res.status})`);
@@ -83,6 +85,15 @@ export function CreateLobbyModal({ open, onClose, onCreated }: Props) {
           )}
           <Section label="max players" center>
             <NumberInput value={maxPlayers} onChange={setMaxPlayers} min={2} max={8} />
+          </Section>
+          <Section label="vote time (seconds)" center>
+            <NumberInput
+              value={answerTimeLimitSec}
+              onChange={setAnswerTimeLimitSec}
+              min={5}
+              max={60}
+              step={5}
+            />
           </Section>
         </div>
 
@@ -166,17 +177,19 @@ function NumberInput({
   onChange,
   min,
   max,
+  step = 1,
 }: {
   value: number;
   onChange: (v: number) => void;
   min: number;
   max: number;
+  step?: number;
 }) {
   return (
     <div className="inline-flex items-center gap-3 rounded-lg border border-border bg-muted/40 p-1">
       <button
         type="button"
-        onClick={() => onChange(Math.max(min, value - 1))}
+        onClick={() => onChange(Math.max(min, value - step))}
         className="rounded-md px-3 py-1 hover:bg-muted"
       >
         −
@@ -184,7 +197,7 @@ function NumberInput({
       <span className="w-12 text-center font-mono tabular-nums">{value}</span>
       <button
         type="button"
-        onClick={() => onChange(Math.min(max, value + 1))}
+        onClick={() => onChange(Math.min(max, value + step))}
         className="rounded-md px-3 py-1 hover:bg-muted"
       >
         +

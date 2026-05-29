@@ -52,6 +52,7 @@ function buildLobbyStateFromDb(lobby: DbLobby, overrides?: Partial<LobbyState>):
     livesInitial,
     roundsTotal,
     maxPlayers: lobby.maxPlayers,
+    answerTimeLimitSec: lobby.answerTimeLimitSec ?? null,
     status: mapDbStatus(lobby.status),
     players: lobby.players.map((p: DbLobbyPlayer) => ({
       userId: p.userId,
@@ -252,13 +253,16 @@ export class LobbyOrchestrator {
     const state = this.state;
     if (!state || state.status !== "MEMORIZE") return;
 
+    const recallMs = state.answerTimeLimitSec
+      ? state.answerTimeLimitSec * 1000
+      : RECALL_MS;
     const next: LobbyState = {
       ...state,
       status: "RECALL",
-      phaseEndsAt: Date.now() + RECALL_MS,
+      phaseEndsAt: Date.now() + recallMs,
     };
     this.emitState(next);
-    this.schedulePhase(RECALL_MS, () => this.scoring());
+    this.schedulePhase(recallMs, () => this.scoring());
   }
 
   private async scoring(): Promise<void> {

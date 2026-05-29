@@ -11,6 +11,7 @@ type CreateBody = {
   livesInitial?: number;
   roundsTotal?: number;
   maxPlayers?: number;
+  answerTimeLimitSec?: number;
 };
 
 async function findActiveLobbyForUser(userId: string) {
@@ -47,12 +48,16 @@ export const POST = withAuth(async (req, auth) => {
 
   const livesInitial = body.livesInitial ?? 3;
   const roundsTotal = body.roundsTotal ?? 5;
+  const answerTimeLimitSec = body.answerTimeLimitSec ?? 12;
 
   if (mode === "BATTLE_ROYALE" && (livesInitial < 1 || livesInitial > 5)) {
     return jsonError("livesInitial must be between 1 and 5", 400);
   }
   if (mode === "ROUND_BASED" && (roundsTotal < 1 || roundsTotal > 20)) {
     return jsonError("roundsTotal must be between 1 and 20", 400);
+  }
+  if (answerTimeLimitSec < 5 || answerTimeLimitSec > 60) {
+    return jsonError("answerTimeLimitSec must be between 5 and 60", 400);
   }
 
   const active = await findActiveLobbyForUser(auth.userId);
@@ -78,6 +83,7 @@ export const POST = withAuth(async (req, auth) => {
             multiplayerMode: mode,
             scoringMode,
             maxPlayers,
+            answerTimeLimitSec,
             players: {
               create: {
                 userId: auth.userId,
