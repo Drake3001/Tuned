@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type Props = {
   value: number;
@@ -25,6 +25,7 @@ export function VSlider({
 }: Props) {
   const trackRef = useRef<HTMLDivElement>(null);
   const draggingRef = useRef(false);
+  const [dragging, setDragging] = useState(false);
 
   const pct = (value - min) / (max - min);
 
@@ -47,6 +48,7 @@ export function VSlider({
     };
     const onUp = () => {
       draggingRef.current = false;
+      setDragging(false);
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
@@ -73,6 +75,7 @@ export function VSlider({
         onPointerDown={(e) => {
           (e.target as Element).setPointerCapture?.(e.pointerId);
           draggingRef.current = true;
+          setDragging(true);
           handleAt(e.clientY);
         }}
         role="slider"
@@ -94,7 +97,9 @@ export function VSlider({
           className="pointer-events-none absolute -left-1.5 -right-1.5 h-3 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.45)] ring-2 ring-black/15"
           style={{
             top: `calc(${(1 - pct) * 100}% - 6px)`,
-            transition: "top 60ms linear",
+            // no transition while dragging → thumb tracks the finger 1:1.
+            // keep a tiny ease only for keyboard steps.
+            transition: dragging ? "none" : "top 60ms linear",
           }}
         />
       </div>

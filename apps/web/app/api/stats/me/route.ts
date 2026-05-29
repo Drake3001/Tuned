@@ -2,6 +2,7 @@ import { prisma } from "@repo/db";
 import { withAuth } from "../../_utils/auth";
 import { jsonError, jsonOk } from "@/lib/api/http";
 import { utcDayString } from "@/lib/api/targets";
+import { computeDailyStreak } from "@/lib/api/streak";
 
 export const runtime = "nodejs";
 
@@ -74,7 +75,8 @@ export const GET = withAuth(async (_req, auth) => {
     return jsonError("User not found", 404);
   }
 
-  const [bestSolo, avgDeltaE, brWins, recentSessions, dailyAggregates] = await Promise.all([
+  const [bestSolo, avgDeltaE, brWins, recentSessions, dailyAggregates, currentStreak] =
+    await Promise.all([
     computeBestSolo(auth.userId),
     computeAvgDeltaE(auth.userId),
     computeBrWins(auth.userId),
@@ -92,6 +94,7 @@ export const GET = withAuth(async (_req, auth) => {
       },
     }),
     getDailyAggregates(auth.userId),
+    computeDailyStreak(auth.userId),
   ]);
 
   return jsonOk({
@@ -104,7 +107,7 @@ export const GET = withAuth(async (_req, auth) => {
     stats: {
       soloPlays: user.playerStats?.soloPlays ?? 0,
       multiplayerPlays: user.playerStats?.multiplayerPlays ?? 0,
-      currentStreak: user.playerStats?.currentStreak ?? 0,
+      currentStreak,
       bestSolo: bestSolo ?? 0,
       avgDeltaE: avgDeltaE ?? 0,
       brWins,

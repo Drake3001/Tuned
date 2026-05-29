@@ -73,15 +73,15 @@ export function CreateLobbyModal({ open, onClose, onCreated }: Props) {
             />
           </Section>
           {mode === "BATTLE_ROYALE" ? (
-            <Section label="lives per player">
+            <Section label="lives per player" center>
               <NumberInput value={livesInitial} onChange={setLivesInitial} min={1} max={5} />
             </Section>
           ) : (
-            <Section label="rounds total">
+            <Section label="rounds total" center>
               <NumberInput value={roundsTotal} onChange={setRoundsTotal} min={1} max={20} />
             </Section>
           )}
-          <Section label="max players">
+          <Section label="max players" center>
             <NumberInput value={maxPlayers} onChange={setMaxPlayers} min={2} max={8} />
           </Section>
         </div>
@@ -112,9 +112,17 @@ export function CreateLobbyModal({ open, onClose, onCreated }: Props) {
   );
 }
 
-function Section({ label, children }: { label: string; children: React.ReactNode }) {
+function Section({
+  label,
+  children,
+  center = false,
+}: {
+  label: string;
+  children: React.ReactNode;
+  center?: boolean;
+}) {
   return (
-    <div className="flex flex-col gap-2">
+    <div className={`flex flex-col gap-2 ${center ? "items-center text-center" : ""}`}>
       <span className="text-xs uppercase tracking-wider text-muted-foreground">
         {label}
       </span>

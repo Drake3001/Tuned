@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { VSlider } from "./VSlider";
 import { hsbToRgb, rgbToHex, rgbToHsb } from "@/lib/game/color/conversions";
 import type { RGB } from "@/lib/game/color";
@@ -24,10 +24,15 @@ export function CardSidePicker({ value, onChange }: Props) {
     onChange(hsbToRgb(next));
   };
 
-  const satTop = rgbToHex(hsbToRgb([hsb[0], 1, hsb[2]]));
-  const satBot = rgbToHex(hsbToRgb([hsb[0], 0, hsb[2]]));
-  const briTop = rgbToHex(hsbToRgb([hsb[0], hsb[1], 1]));
-  const briBot = rgbToHex(hsbToRgb([hsb[0], hsb[1], 0]));
+  const { satTop, satBot, briTop, briBot } = useMemo(
+    () => ({
+      satTop: rgbToHex(hsbToRgb([hsb[0], 1, hsb[2]])),
+      satBot: rgbToHex(hsbToRgb([hsb[0], 0, hsb[2]])),
+      briTop: rgbToHex(hsbToRgb([hsb[0], hsb[1], 1])),
+      briBot: rgbToHex(hsbToRgb([hsb[0], hsb[1], 0])),
+    }),
+    [hsb],
+  );
 
   return (
     <div
