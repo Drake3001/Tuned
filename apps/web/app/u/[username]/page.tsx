@@ -2,7 +2,6 @@
 
 import { use, useEffect, useState } from "react";
 import { StatCards } from "@/components/profile/StatCards";
-import { ProgressChart } from "@/components/profile/ProgressChart";
 import { fetchJson } from "@/lib/api/client";
 
 type ProfileData = {
@@ -57,6 +56,20 @@ export default function ProfilePage({
             joined {new Date(data.user.createdAt).toLocaleDateString()}
           </p>
         </div>
+        {data.stats && data.stats.currentStreak > 0 && (
+          <div
+            className="ml-auto flex items-center gap-2 rounded-full border border-border px-4 py-2"
+            title="consecutive days of daily challenges"
+          >
+            <span className="text-xl leading-none">🔥</span>
+            <span className="font-mono text-lg font-bold tabular-nums">
+              {data.stats.currentStreak}
+            </span>
+            <span className="text-sm text-muted-foreground">
+              day{data.stats.currentStreak === 1 ? "" : "s"}
+            </span>
+          </div>
+        )}
       </div>
 
       <StatCards
@@ -72,9 +85,6 @@ export default function ProfilePage({
             : null
         }
       />
-
-      <h2 className="mb-4 mt-12 text-lg font-bold">last 30 days</h2>
-      <ProgressChart data={data.daily} />
     </main>
   );
 }

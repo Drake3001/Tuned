@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { UserMenu } from "./UserMenu";
+import { PlayerSearch } from "./PlayerSearch";
 import { ResumeLobbyBanner } from "@/components/lobby/ResumeLobbyBanner";
 
 export function TopBar() {
@@ -25,7 +26,10 @@ export function TopBar() {
           </Link>
           <ResumeLobbyBanner />
         </nav>
-        <UserMenu />
+        <div className="flex items-center gap-3">
+          <PlayerSearch />
+          <UserMenu />
+        </div>
       </div>
     </header>
   );
