@@ -31,6 +31,8 @@ export type LobbyState = {
   livesInitial: number;
   roundsTotal: number;
   maxPlayers: number;
+  /** Seconds players have to submit in RECALL; null = use default. */
+  answerTimeLimitSec: number | null;
   status: Status;
   players: LobbyPlayer[];
   currentRound: number;
