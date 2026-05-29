@@ -3,6 +3,7 @@
 import type { RGB } from "@/lib/game/color";
 import { rgbToHsb } from "@/lib/game/color/conversions";
 import { legibleLabel, legibleStrong } from "@/lib/game/color/contrast";
+import { proximityScore, describeProximity } from "@/lib/game/proximity";
 import { CardActionButton } from "./GameCard";
 
 type Props = {
@@ -21,20 +22,6 @@ function ArrowIcon() {
       <path d="M5 12h14M13 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
-}
-
-function proximityScore(deltaE: number): number {
-  // 0..10 closeness; ΔE 0 → 10, ΔE 50+ → 0. Linear.
-  return Math.max(0, Math.min(10, 10 - deltaE * 0.2));
-}
-
-function describe(score: number): string {
-  if (score >= 9.5) return "Practically pixel-perfect.";
-  if (score >= 9) return "Honestly, eerie.";
-  if (score >= 8) return "Trained eye.";
-  if (score >= 6) return "Close. Real close.";
-  if (score >= 3) return "You remembered a color. Just not this one.";
-  return "Different color entirely.";
 }
 
 function formatHsb(rgb: RGB): string {
@@ -88,7 +75,7 @@ export function AttemptResultCard({
                   className="mt-2 max-w-[14ch] text-right text-base"
                   style={{ color: guessMuted }}
                 >
-                  {describe(proximityScore(deltaE))}
+                  {describeProximity(proximityScore(deltaE))}
                 </p>
               </div>
             </div>
