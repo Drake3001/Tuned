@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { signIn, signOut, useSession } from "next-auth/react";
+import { isAdmin } from "@/lib/auth/roles";
 
 export function UserMenu() {
   const { data: session, status } = useSession();
@@ -23,9 +24,18 @@ export function UserMenu() {
   }
 
   const username = session.user.username ?? "player";
+  const admin = isAdmin(session.user.roles);
 
   return (
     <div className="flex items-center gap-3 text-sm">
+      {admin && (
+        <span
+          className="rounded-md border border-border px-2 py-0.5 font-mono text-xs uppercase tracking-wide"
+          style={{ color: "var(--tuned-orange)" }}
+        >
+          admin
+        </span>
+      )}
       <Link
         href={`/u/${username}`}
         className="hover:underline"

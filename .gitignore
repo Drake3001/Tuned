@@ -36,5 +36,3 @@ coverage/
 
 # Vercel / Deployment
 .vercel/
-
-infra/keycloak/

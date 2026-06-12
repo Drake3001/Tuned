@@ -6,6 +6,7 @@ declare module "next-auth" {
       userId?: string;
       username?: string;
       keycloakId?: string;
+      roles?: string[];
     };
   }
 }
@@ -15,6 +16,7 @@ declare module "next-auth/jwt" {
     userId?: string;
     username?: string;
     keycloakId?: string;
+    roles?: string[];
   }
 }
 

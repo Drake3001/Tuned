@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import type { NextAuthOptions } from "next-auth";
 import KeycloakProvider from "next-auth/providers/keycloak";
 import { prisma } from "../../../packages/db/src";
+import { parseKeycloakRolesFromSignIn } from "@/lib/auth/roles";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
@@ -24,6 +25,12 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, account, profile, user }) {
       // On first sign-in with Keycloak, persist user and store our DB userId in the JWT.
       if (account?.provider === "keycloak") {
+        token.roles = parseKeycloakRolesFromSignIn(
+          profile,
+          account.id_token,
+          account.access_token,
+        );
+
         const keycloakId =
           account.providerAccountId ?? (typeof (profile as any)?.sub === "string" ? ((profile as any).sub as string) : null);
         if (keycloakId) {
@@ -59,6 +66,7 @@ export const authOptions: NextAuthOptions = {
         if (token.userId) session.user.userId = token.userId;
         if (token.username) session.user.username = token.username;
         if (token.keycloakId) session.user.keycloakId = token.keycloakId;
+        if (token.roles) session.user.roles = token.roles;
       }
       return session;
     },
